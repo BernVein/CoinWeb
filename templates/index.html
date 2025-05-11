@@ -780,6 +780,15 @@
         .coin-card.zero-count .coin-value {
             color: var(--text-secondary);
         }
+        .market-trend {
+            display: none;
+        }
+        
+        .market-trend .trend-title,
+        .market-trend .trend-content,
+        .market-trend .trend-source {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -851,7 +860,7 @@
                     </div>
                 </div>
                 <div class="total-amount">
-                    Total Amount: {{ total_amount|default('0') }} ₱
+                    Total Amount: ₱{{ total_amount|default('0') }}
                 </div>
                 <div class="conversion-grid">
                     <div class="conversion-item" onclick="showConversionModal('USD', 0.018, '$')">
