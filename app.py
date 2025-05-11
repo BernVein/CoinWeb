@@ -21,6 +21,7 @@ def load_model():
             # Import here to reduce cold start time
             from ultralytics import YOLO
             import ultralytics.nn.tasks
+            import torch.nn.modules.container
             
             # Fix for PyTorch 2.6+ weights_only=True default
             # Add safe globals to allow loading YOLO model
@@ -31,7 +32,11 @@ def load_model():
                 ultralytics.nn.tasks.DetectionModel,
                 ultralytics.nn.modules.Conv,
                 ultralytics.nn.modules.block.C2f,
-                ultralytics.nn.modules.block.SPPF
+                ultralytics.nn.modules.block.SPPF,
+                torch.nn.modules.container.Sequential,  # Add PyTorch Sequential module
+                torch.nn.modules.activation.SiLU,       # Add SiLU activation
+                torch.nn.modules.conv.Conv2d,           # Add Conv2d
+                torch.nn.modules.batchnorm.BatchNorm2d  # Add BatchNorm2d
             ]
             
             # Dynamically check if Head module exists
@@ -67,10 +72,47 @@ def load_model():
             # Load your trained YOLOv8 model
             model_load_status = {"status": "loading", "progress": 50}
             print(f"Loading model from {model_path}...")
-            model = YOLO(model_path)
-            model_load_status = {"status": "completed", "progress": 100}
-            print("Model loaded successfully!")
-            return True
+            
+            try:
+                # First attempt - standard loading
+                model = YOLO(model_path)
+                model_load_status = {"status": "completed", "progress": 100}
+                print("Model loaded successfully!")
+                return True
+            except Exception as first_error:
+                print(f"First attempt at loading model failed: {first_error}")
+                
+                try:
+                    # Second attempt - use a direct torch.load with weights_only=False
+                    # Note: Only use with trusted model files!
+                    print("Attempting alternate loading method with weights_only=False...")
+                    
+                    # Override YOLO's loading mechanism by monkey patching torch.load
+                    original_torch_load = torch.load
+                    
+                    def patched_torch_load(*args, **kwargs):
+                        kwargs['weights_only'] = False
+                        return original_torch_load(*args, **kwargs)
+                    
+                    # Apply the patch
+                    torch.load = patched_torch_load
+                    
+                    # Try to load the model again
+                    model = YOLO(model_path)
+                    
+                    # Restore original torch.load
+                    torch.load = original_torch_load
+                    
+                    model_load_status = {"status": "completed", "progress": 100}
+                    print("Model loaded successfully with fallback method!")
+                    return True
+                except Exception as second_error:
+                    # Restore original torch.load if not already restored
+                    torch.load = original_torch_load
+                    
+                    model_load_status = {"status": "error", "progress": 0, "message": f"Failed to load model: {second_error}"}
+                    print(f"All attempts to load model failed. Final error: {second_error}")
+                    return False
         except Exception as e:
             model_load_status = {"status": "error", "progress": 0, "message": str(e)}
             print(f"Error loading model: {e}")
