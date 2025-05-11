@@ -4,49 +4,18 @@ import os
 import base64
 from io import BytesIO
 import json
-import urllib.request
-import tempfile
-import time
-import gdown
 import torch
 import torch.serialization
-import os
 
 # Initialize Flask app
 app = Flask(__name__)
 
-# For Vercel deployment, we'll load the model dynamically when needed
-# to avoid issues with model size limitations
+# Global variables
 model = None
-model_download_status = {"status": "not_started", "progress": 0}
-
-def download_model_from_gdrive():
-    global model_download_status
-    model_download_status = {"status": "downloading", "progress": 10}
-    
-    # Create models directory if it doesn't exist
-    os.makedirs(os.path.join("models", "PHCoinClassifier"), exist_ok=True)
-    
-    # Google Drive file ID from the shared link
-    file_id = "12Guiu6h4ZK562yucv0DfSVLbGwKL3rN7"
-    model_path = os.path.join("models", "PHCoinClassifier", "best.pt")
-    
-    try:
-        model_download_status = {"status": "downloading", "progress": 30}
-        # Use gdown to download file from Google Drive
-        output = model_path
-        url = f'https://drive.google.com/uc?id={file_id}'
-        gdown.download(url, output, quiet=False)
-        
-        model_download_status = {"status": "completed", "progress": 100}
-        return model_path
-    except Exception as e:
-        model_download_status = {"status": "error", "progress": 0, "message": str(e)}
-        print(f"Error downloading model: {e}")
-        return None
+model_load_status = {"status": "not_started", "progress": 0}
 
 def load_model():
-    global model, model_download_status
+    global model, model_load_status
     if model is None:
         try:
             # Import here to reduce cold start time
@@ -55,6 +24,7 @@ def load_model():
             
             # Fix for PyTorch 2.6+ weights_only=True default
             # Add safe globals to allow loading YOLO model
+            model_load_status = {"status": "initializing", "progress": 10}
             torch.serialization.add_safe_globals([
                 ultralytics.nn.tasks.DetectionModel,
                 ultralytics.nn.modules.Conv,
@@ -63,21 +33,23 @@ def load_model():
                 ultralytics.nn.modules.Head
             ])
             
-            # Check if model exists locally, if not download it
+            # Use model from the repository
             model_path = os.path.join("models", "PHCoinClassifier", "best.pt")
+            
             if not os.path.exists(model_path):
-                model_download_status = {"status": "starting", "progress": 5}
-                model_path = download_model_from_gdrive()
-                if model_path is None:
-                    return False
+                model_load_status = {"status": "error", "progress": 0, "message": "Model file not found in repository"}
+                print(f"Error: Model file not found at {model_path}")
+                return False
                 
             # Load your trained YOLOv8 model
-            model_download_status = {"status": "loading", "progress": 90}
+            model_load_status = {"status": "loading", "progress": 50}
+            print(f"Loading model from {model_path}...")
             model = YOLO(model_path)
-            model_download_status = {"status": "completed", "progress": 100}
+            model_load_status = {"status": "completed", "progress": 100}
+            print("Model loaded successfully!")
             return True
         except Exception as e:
-            model_download_status = {"status": "error", "progress": 0, "message": str(e)}
+            model_load_status = {"status": "error", "progress": 0, "message": str(e)}
             print(f"Error loading model: {e}")
             return False
     return True
@@ -146,10 +118,10 @@ def image_to_data_uri(img):
     img_str = base64.b64encode(buffered.getvalue()).decode()
     return f"data:image/jpeg;base64,{img_str}"
 
-# Endpoint to check model download status
+# Endpoint to check model loading status
 @app.route("/model-status", methods=["GET"])
 def model_status():
-    return jsonify(model_download_status)
+    return jsonify(model_load_status)
 
 # Home route for uploading image
 @app.route("/", methods=["GET", "POST"])
@@ -195,11 +167,11 @@ def index():
 def health():
     return "OK", 200
 
-# For Vercel serverless deployment
+# For deployment
 app.debug = False
 
 # Get port from environment variable for Render
-port = int(os.environ.get("PORT", 8080))
+port = int(os.environ.get("PORT", 10000))
 
 # Ensure the Flask app runs
 if __name__ == "__main__":
