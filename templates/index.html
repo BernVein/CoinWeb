@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PH Coin Classifier</title>
     <!-- Google Fonts: Inter and JetBrains Mono for modern/monospace look -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -11,6 +11,11 @@
     <!-- Add Chart.js library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* Add universal box-sizing */
+        * {
+            box-sizing: border-box;
+        }
+        
         :root {
             --bg-main: #0f1117;
             --bg-card: #16181f;
@@ -40,17 +45,20 @@
             margin: 0;
             display: flex;
             flex-direction: column;
+            padding: 0 10px;
+            box-sizing: border-box;
         }
         .container {
             width: 100%;
             max-width: 480px;
             margin: 0 auto;
-            padding: 40px 16px 0 16px;
+            padding: 40px 20px 0 20px;
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
+            box-sizing: border-box;
         }
         .card {
             background: var(--bg-card);
@@ -158,6 +166,7 @@
             gap: 14px;
             width: 100%;
             margin-top: 8px;
+            align-items: center;
         }
         @media (min-width: 480px) {
             .buttons-group {
@@ -170,9 +179,9 @@
             border: none;
             border-radius: var(--radius-sm);
             font-family: 'Inter', Arial, sans-serif;
-            font-size: var(--font-size-base);
+            font-size: var(--font-size-sm);
             font-weight: 600;
-            padding: 14px 0;
+            padding: 12px 0;
             width: 100%;
             max-width: 240px;
             margin: 0;
@@ -419,9 +428,11 @@
             color: var(--accent);
             margin-bottom: 6px;
         }
+        
         .peso-sign {
             font-size: 1.1rem;
-            vertical-align: super;
+            vertical-align: baseline;
+            margin-right: 2px;
         }
         .coin-count {
             display: block;
@@ -574,6 +585,8 @@
             text-align: center;
             border: 1.5px solid var(--border);
             animation: modalFadeIn 0.3s ease-out;
+            box-sizing: border-box;
+            margin: 0 auto;
         }
         .modal-icon {
             font-size: 3rem;
@@ -601,6 +614,8 @@
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
+            display: inline-block;
+            min-width: 120px;
         }
         .modal-btn:hover {
             background: var(--accent-hover);
@@ -630,16 +645,252 @@
             font-size: var(--font-size-sm);
             opacity: 0.8;
         }
-        @media (max-width: 600px) {
+        @media (max-width: 480px) {
+            :root {
+                --font-size-sm: 0.7rem;
+                --font-size-base: 0.8rem;
+                --font-size-lg: 0.9rem;
+                --font-size-xl: 1rem;
+                --radius: 18px;
+                --radius-sm: 12px;
+            }
+            
             .container {
-                max-width: 99vw;
-                padding: 18px 2vw 0 2vw;
+                padding: 25px 20px 0 20px;
+                width: 100%;
+                box-sizing: border-box;
             }
+            
             .card {
-                padding: 14px 4px 12px 4px;
+                padding: 28px 20px 20px 20px;
+                width: 100%;
+                box-sizing: border-box;
+                margin-bottom: 25px;
             }
+            
+            .upload-container {
+                min-height: 150px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            
+            .upload-container i {
+                font-size: 2.2rem;
+            }
+            
+            #image-preview-container {
+                height: 180px;
+                width: 100%;
+                box-sizing: border-box;
+                margin-bottom: 18px;
+            }
+            
             .coin-group {
-                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            
+            .coin-row {
+                gap: 12px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            
+            .coin-card {
+                padding: 16px 8px 12px 8px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            
+            .coin-value {
+                margin-bottom: 4px;
+            }
+            
+            .total-amount {
+                font-size: 1.1rem;
+                padding-top: 12px;
+                margin-top: 14px;
+            }
+            
+            .conversion-grid {
+                gap: 10px;
+                margin-top: 16px;
+                padding-top: 16px;
+            }
+            
+            .conversion-item {
+                padding: 10px 8px;
+            }
+            
+            .modal-content {
+                max-width: 90%;
+                padding: 20px 16px;
+                box-sizing: border-box;
+            }
+            
+            .modal-icon {
+                font-size: 2.5rem;
+                margin-bottom: 12px;
+            }
+            
+            .modal-title {
+                margin-bottom: 8px;
+            }
+            
+            .modal-message {
+                margin-bottom: 18px;
+            }
+            
+            .modal-btn {
+                padding: 10px 18px;
+            }
+            
+            .buttons-group {
+                width: 100%;
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .btn-icon {
+                max-width: 46px;
+                height: 46px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin: 0 auto;
+            }
+            
+            .btn-icon i {
+                font-size: 1.1rem;
+            }
+            
+            .results-title {
+                font-size: 1rem;
+                margin-bottom: 16px;
+            }
+            
+            .footer {
+                padding: 20px 0 10px 0;
+            }
+            
+            .coin-crop {
+                max-width: 80px;
+                max-height: 80px;
+                width: 80px;
+                height: 80px;
+            }
+            
+            .conversion-chart {
+                height: 150px;
+            }
+            
+            .bounding-box-label {
+                font-size: 8px;
+                top: -14px;
+                padding: 0 3px;
+            }
+            
+            .toggle-switch {
+                font-size: 0.65rem;
+                margin-bottom: 8px;
+                gap: 6px;
+            }
+            
+            .toggle-switch label {
+                width: 36px;
+                height: 18px;
+            }
+            
+            .toggle-switch label:after {
+                width: 12px;
+                height: 12px;
+            }
+            
+            .preview-modal img {
+                max-width: 95%;
+                max-height: 85vh;
+            }
+            
+            .coin-modal-content {
+                padding: 18px 14px;
+            }
+            
+            .coin-crops-container {
+                gap: 8px;
+                margin: 15px 0;
+            }
+            
+            .file-input {
+                height: 100%;
+            }
+            
+            .upload-text {
+                font-size: 0.85rem;
+                margin-bottom: 3px;
+            }
+            
+            .upload-hint {
+                font-size: 0.65rem;
+            }
+            
+            .result-image-container {
+                margin-bottom: 18px;
+            }
+            
+            #result-image {
+                max-height: 180px;
+            }
+            
+            .coin-card, .btn, .conversion-item, .modal-btn {
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            .container, .card, .upload-container, 
+            .btn, .coin-card, .conversion-item, 
+            .modal-content, .coin-crop {
+                transition: all 0.2s ease-out;
+            }
+            
+            .modal {
+                padding: 0 15px;
+            }
+            
+            .modal-content {
+                max-width: 90%;
+                padding: 20px 16px;
+                box-sizing: border-box;
+                margin: 0 auto;
+            }
+            
+            .modal-title {
+                font-size: 0.95rem;
+                margin-bottom: 8px;
+            }
+            
+            .modal-message {
+                font-size: 0.8rem;
+                margin-bottom: 18px;
+            }
+            
+            .coin-modal-content,
+            .preview-modal img {
+                max-width: 90%;
+                margin: 0 auto;
+            }
+            
+            .coin-modal,
+            .preview-modal {
+                padding: 0 15px;
+            }
+            
+            #preview-section {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
             }
         }
         @keyframes fadeIn {
@@ -716,6 +967,8 @@
             text-align: center;
             border: 1.5px solid var(--border);
             animation: modalFadeIn 0.3s ease-out;
+            box-sizing: border-box;
+            margin: 0 auto;
         }
         .coin-crops-container {
             display: flex;
@@ -789,6 +1042,226 @@
         .market-trend .trend-source {
             display: none;
         }
+
+        /* Add more screen size breakpoints for better responsiveness */
+        @media (min-width: 481px) and (max-width: 768px) {
+            body {
+                padding: 0 15px; /* Larger padding on medium screens */
+            }
+            
+            .container {
+                max-width: 600px;
+                padding: 40px 30px 0 30px;
+            }
+            
+            .card {
+                padding: 36px 28px 28px 28px;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            body {
+                padding: 0 20px; /* Largest padding on large screens */
+            }
+            
+            .container {
+                max-width: 700px;
+                padding: 50px 40px 0 40px;
+            }
+            
+            .card {
+                padding: 42px 32px 32px 32px;
+            }
+        }
+        
+        /* Add smaller screen size breakpoint for very small devices */
+        @media (max-width: 360px) {
+            :root {
+                --font-size-sm: 0.65rem;
+                --font-size-base: 0.75rem;
+                --font-size-lg: 0.85rem;
+                --font-size-xl: 0.95rem;
+                --radius: 16px;
+                --radius-sm: 10px;
+            }
+            
+            .container {
+                padding: 20px 16px 0 16px;
+            }
+            
+            .card {
+                padding: 24px 16px 16px 16px;
+                margin-bottom: 20px;
+            }
+            
+            .upload-container {
+                min-height: 140px;
+            }
+            
+            .upload-container i {
+                font-size: 2rem;
+            }
+            
+            .btn-icon {
+                max-width: 40px;
+                height: 40px;
+            }
+            
+            .coin-crop {
+                max-width: 70px;
+                max-height: 70px;
+                width: 70px;
+                height: 70px;
+            }
+            
+            .coin-group, .coin-row {
+                gap: 10px;
+            }
+            
+            .coin-card {
+                padding: 14px 6px 10px 6px;
+            }
+            
+            .results-title {
+                font-size: 0.95rem;
+            }
+            
+            .upload-text {
+                font-size: 0.8rem;
+            }
+            
+            .upload-hint {
+                font-size: 0.6rem;
+            }
+        }
+        
+        /* Updated styling for buttons container */
+        #buttons-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-top: 15px;
+            gap: 15px;
+        }
+        
+        /* Modal styles to prevent sticking to edges */
+        .modal, .coin-modal, .preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+        
+        .modal-content, .coin-modal-content {
+            background: var(--bg-card);
+            padding: 32px;
+            border-radius: var(--radius);
+            max-width: 90%;
+            width: 400px;
+            text-align: center;
+            border: 1.5px solid var(--border);
+            animation: modalFadeIn 0.3s ease-out;
+            box-sizing: border-box;
+            margin: 0 auto;
+        }
+        
+        /* Mobile styling improvements */
+        @media (max-width: 480px) {
+            /* Existing styles */
+            
+            /* Better button handling */
+            #buttons-container {
+                flex-direction: row; /* Keep buttons side by side */
+                gap: 15px;
+                justify-content: center;
+                align-items: center;
+                margin: 15px auto;
+            }
+            
+            .btn-icon {
+                width: 46px;
+                height: 46px;
+                min-width: 46px;
+                max-width: 46px;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            
+            /* More comprehensive modal improvements for mobile */
+            .modal,
+            .coin-modal,
+            .preview-modal {
+                padding: 0 15px;
+            }
+            
+            .modal-content,
+            .coin-modal-content {
+                padding: 20px 16px;
+                max-width: 90%;
+                width: auto;
+            }
+            
+            .modal-icon {
+                font-size: 2.5rem;
+                margin-bottom: 12px;
+            }
+            
+            .modal-title,
+            .coin-modal-title {
+                font-size: 0.95rem;
+                margin-bottom: 8px;
+            }
+            
+            .modal-message {
+                font-size: 0.8rem;
+                margin-bottom: 18px;
+            }
+            
+            .modal-btn {
+                padding: 10px 18px;
+                font-size: 0.8rem;
+                min-width: 100px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            /* Existing styles */
+            
+            #buttons-container {
+                gap: 10px;
+            }
+            
+            .btn-icon {
+                width: 40px;
+                height: 40px;
+                min-width: 40px;
+                max-width: 40px;
+            }
+            
+            .modal-content, .coin-modal-content {
+                padding: 16px 14px;
+            }
+            
+            .modal-title, .coin-modal-title {
+                font-size: 0.9rem;
+            }
+            
+            .modal-message {
+                font-size: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -840,21 +1313,21 @@
                 <div class="coin-group">
                     <div class="coin-row">
                         <div class="coin-card {{ 'zero-count' if (coin_counts|default({})).get('1', 0) == 0 }}" onclick="{{ 'showCoinModal(1)' if (coin_counts|default({})).get('1', 0) > 0 else '' }}">
-                            <div class="coin-value">1<span class="peso-sign">₱</span></div>
+                            <div class="coin-value"><span class="peso-sign">₱</span>1</div>
                             <span class="coin-count" id="coin-count-1">{{ (coin_counts|default({})).get('1', 0) }} coin{{ 's' if (coin_counts|default({})).get('1', 0) != 1 else '' }}</span>
                         </div>
                         <div class="coin-card {{ 'zero-count' if (coin_counts|default({})).get('5', 0) == 0 }}" onclick="{{ 'showCoinModal(5)' if (coin_counts|default({})).get('5', 0) > 0 else '' }}">
-                            <div class="coin-value">5<span class="peso-sign">₱</span></div>
+                            <div class="coin-value"><span class="peso-sign">₱</span>5</div>
                             <span class="coin-count" id="coin-count-5">{{ (coin_counts|default({})).get('5', 0) }} coin{{ 's' if (coin_counts|default({})).get('5', 0) != 1 else '' }}</span>
                         </div>
                     </div>
                     <div class="coin-row">
                         <div class="coin-card {{ 'zero-count' if (coin_counts|default({})).get('10', 0) == 0 }}" onclick="{{ 'showCoinModal(10)' if (coin_counts|default({})).get('10', 0) > 0 else '' }}">
-                            <div class="coin-value">10<span class="peso-sign">₱</span></div>
+                            <div class="coin-value"><span class="peso-sign">₱</span>10</div>
                             <span class="coin-count" id="coin-count-10">{{ (coin_counts|default({})).get('10', 0) }} coin{{ 's' if (coin_counts|default({})).get('10', 0) != 1 else '' }}</span>
                         </div>
                         <div class="coin-card {{ 'zero-count' if (coin_counts|default({})).get('20', 0) == 0 }}" onclick="{{ 'showCoinModal(20)' if (coin_counts|default({})).get('20', 0) > 0 else '' }}">
-                            <div class="coin-value">20<span class="peso-sign">₱</span></div>
+                            <div class="coin-value"><span class="peso-sign">₱</span>20</div>
                             <span class="coin-count" id="coin-count-20">{{ (coin_counts|default({})).get('20', 0) }} coin{{ 's' if (coin_counts|default({})).get('20', 0) != 1 else '' }}</span>
                         </div>
                     </div>
@@ -903,7 +1376,7 @@
         <div class="modal-content">
             <i class="fas fa-exclamation-circle modal-icon"></i>
             <h2 class="modal-title">No Coins Detected</h2>
-            <p class="modal-message">We couldn't detect any coins in the image. Please try again with a clearer image of Philippine coins.</p>
+            <p class="modal-message">No coins were detected in the image. Please try again with a clearer image of Philippine coins.</p>
             <button class="modal-btn" onclick="closeModal()">Try Again</button>
         </div>
     </div>
@@ -913,7 +1386,7 @@
         <div class="modal-content">
             <i class="fas fa-image modal-icon" style="color: #ff6b6b;"></i>
             <h2 class="modal-title">Invalid Image</h2>
-            <p class="modal-message">We couldn't recognize any valid Philippine coins in this image. Please upload a clear photo of Philippine coins.</p>
+            <p class="modal-message">Could not recognize any valid Philippine coins in this image. Please upload a clear photo of Philippine coins.</p>
             <button class="modal-btn" onclick="closeInvalidImageModal()">Try Another Image</button>
         </div>
     </div>
@@ -935,6 +1408,15 @@
             <h2 class="modal-title">Error</h2>
             <p id="errorMessage" class="modal-message">An error occurred while processing your request.</p>
             <button class="modal-btn" onclick="closeErrorModal()">OK</button>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="modal">
+        <div class="modal-content">
+            <i class="fas fa-spinner fa-spin modal-icon"></i>
+            <h2 class="modal-title">Analyzing Image</h2>
+            <p class="modal-message">Analyzing your image to identify and count Philippine coins. This may take a moment...</p>
         </div>
     </div>
 
@@ -1016,6 +1498,7 @@
             var uploadArea = document.getElementById("upload-area");
             var previewSection = document.getElementById("preview-section");
             var imgPreview = document.getElementById("image-preview");
+            var buttonsContainer = document.getElementById("buttons-container");
             
             if (file) {
                 classifyBtn.classList.remove("btn-disabled");
@@ -1025,7 +1508,19 @@
                     imgPreview.src = reader.result;
                     imgPreview.style.display = "block";
                     uploadArea.classList.add("upload-area-hidden");
-                    previewSection.style.display = "block";
+                    previewSection.style.display = "flex"; // Change to flex for better alignment
+                    previewSection.style.flexDirection = "column"; // Stack children vertically
+                    previewSection.style.alignItems = "center"; // Center children horizontally
+                    
+                    // Ensure buttons container is visible and properly styled
+                    buttonsContainer.style.display = "flex";
+                    buttonsContainer.style.justifyContent = "center";
+                    buttonsContainer.style.width = "100%";
+                    
+                    // Force layout recalculation
+                    setTimeout(function() {
+                        window.dispatchEvent(new Event('resize'));
+                    }, 100);
                 }
                 reader.readAsDataURL(file);
             } else {
@@ -1053,7 +1548,14 @@
                         document.getElementById("upload-area").classList.add("upload-area-hidden");
                         // Hide the form itself
                         this.classList.add("upload-area-hidden");
-                        this.submit();
+                        
+                        // Show loading modal
+                        document.getElementById("loadingModal").style.display = "flex";
+                        
+                        // Submit the form after a brief delay to allow the loading modal to appear
+                        setTimeout(() => {
+                            this.submit();
+                        }, 100);
                     } else {
                         showNoCoinsModal();
                     }
@@ -1142,7 +1644,7 @@
                 ${trendPercentage}%
             </span>`;
             
-            rateElement.innerHTML = `1 ₱ = ${symbol}${displayRate.toFixed(4)}${trendHtml}`;
+            rateElement.innerHTML = `₱1 = ${symbol}${displayRate.toFixed(4)}${trendHtml}`;
             exampleElement.textContent = `${symbol}1 = ₱${(1/displayRate).toFixed(2)}`;
             
             // Show last updated time if available
@@ -1228,7 +1730,7 @@
                 label.className = 'bounding-box-label';
                 // Show coin value and side (front/back)
                 const side = className.includes('Back') ? 'Back' : 'Front';
-                label.textContent = `${value}₱ (${side}, ${(confidence * 100).toFixed(0)}%)`;
+                label.textContent = `₱${value} (${side}, ${(confidence * 100).toFixed(0)}%)`;
                 label.style.backgroundColor = getComputedStyle(box).borderColor;
                 
                 box.appendChild(label);
@@ -1292,7 +1794,7 @@
         // Function to update coin display and apply zero-count styling
         function updateCoinDisplay() {
             if (coinCounts) {
-                // Update 1₱ coins
+                // Update ₱1 coins
                 const count1 = coinCounts['1'] || 0;
                 document.getElementById('coin-count-1').textContent = `${count1} coin${count1 !== 1 ? 's' : ''}`;
                 const card1 = document.getElementById('coin-count-1').closest('.coin-card');
@@ -1304,7 +1806,7 @@
                     card1.onclick = function() { showCoinModal(1); };
                 }
                 
-                // Update 5₱ coins
+                // Update ₱5 coins
                 const count5 = coinCounts['5'] || 0;
                 document.getElementById('coin-count-5').textContent = `${count5} coin${count5 !== 1 ? 's' : ''}`;
                 const card5 = document.getElementById('coin-count-5').closest('.coin-card');
@@ -1316,7 +1818,7 @@
                     card5.onclick = function() { showCoinModal(5); };
                 }
                 
-                // Update 10₱ coins
+                // Update ₱10 coins
                 const count10 = coinCounts['10'] || 0;
                 document.getElementById('coin-count-10').textContent = `${count10} coin${count10 !== 1 ? 's' : ''}`;
                 const card10 = document.getElementById('coin-count-10').closest('.coin-card');
@@ -1328,7 +1830,7 @@
                     card10.onclick = function() { showCoinModal(10); };
                 }
                 
-                // Update 20₱ coins
+                // Update ₱20 coins
                 const count20 = coinCounts['20'] || 0;
                 document.getElementById('coin-count-20').textContent = `${count20} coin${count20 !== 1 ? 's' : ''}`;
                 const card20 = document.getElementById('coin-count-20').closest('.coin-card');
@@ -1400,7 +1902,7 @@
                 label.className = 'bounding-box-label';
                 // Show coin value and side (front/back)
                 const side = className.includes('Back') ? 'Back' : 'Front';
-                label.textContent = `${value}₱ (${side}, ${(confidence * 100).toFixed(0)}%)`;
+                label.textContent = `₱${value} (${side}, ${(confidence * 100).toFixed(0)}%)`;
                 label.style.backgroundColor = getComputedStyle(box).borderColor;
                 
                 box.appendChild(label);
@@ -1576,7 +2078,7 @@
             const container = document.getElementById('coinCropsContainer');
             
             // Update modal title
-            title.textContent = `${denomination}₱ Coin Details`;
+            title.textContent = `₱${denomination} Coin Details`;
             
             // Clear previous content
             container.innerHTML = '';
@@ -1657,7 +2159,7 @@
                 // No coins of this denomination found
                 const noCoinsMsg = document.createElement('div');
                 noCoinsMsg.className = 'no-coins-message';
-                noCoinsMsg.innerHTML = `<i class="fas fa-info-circle"></i> No ${denomination}₱ coins detected in this image.`;
+                noCoinsMsg.innerHTML = `<i class="fas fa-info-circle"></i> No ₱${denomination} coins detected in this image.`;
                 container.appendChild(noCoinsMsg);
             }
             {% else %}
