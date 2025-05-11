@@ -146,8 +146,13 @@ def model_status():
     return jsonify(model_load_status)
 
 # Home route for uploading image
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET", "POST", "HEAD"])
 def index():
+    # Handle HEAD request (used by health checks)
+    if request.method == "HEAD":
+        logger.debug("Handling HEAD request")
+        return "", 200
+        
     # Don't load the model on initial page load
     if request.method == "GET":
         logger.debug("Rendering initial page without loading model")

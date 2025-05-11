@@ -1415,8 +1415,18 @@
     <div id="loadingModal" class="modal">
         <div class="modal-content">
             <i class="fas fa-spinner fa-spin modal-icon"></i>
-            <h2 class="modal-title">Analyzing Image</h2>
-            <p class="modal-message">Analyzing your image to identify and count Philippine coins. This may take a moment...</p>
+            <h2 class="modal-title">Classifying Coins</h2>
+            <p class="modal-message">Analyzing image to identify and count Philippine coins...</p>
+            
+            <!-- Progress bar container -->
+            <div style="width: 100%; background-color: var(--bg-card-alt); border-radius: 10px; margin: 15px 0; overflow: hidden;">
+                <div id="loading-progress-bar" style="width: 10%; height: 16px; background-color: var(--accent); border-radius: 10px; transition: width 0.3s;"></div>
+            </div>
+            <p id="loading-percentage" style="margin: 0; font-size: 0.9rem; color: var(--accent); font-weight: 600;">10%</p>
+            
+            <p class="modal-message" style="font-size: 0.8em; margin-top: 15px; opacity: 0.8;">
+                Classification may take a moment. First-time detection may be slower as the system prepares.
+            </p>
         </div>
     </div>
 
@@ -1490,6 +1500,12 @@
             if (Object.keys(coinCounts).length > 0) {
                 updateCoinDisplay();
             }
+            
+            // Set up loading modal progress for initial form submission
+            document.getElementById('upload-form').addEventListener('submit', function() {
+                document.getElementById('loadingModal').style.display = 'flex';
+                simulateLoadingProgress();
+            });
         });
 
         function previewImage() {
@@ -1551,6 +1567,8 @@
                         
                         // Show loading modal
                         document.getElementById("loadingModal").style.display = "flex";
+                        // Start progress simulation
+                        simulateLoadingProgress();
                         
                         // Submit the form after a brief delay to allow the loading modal to appear
                         setTimeout(() => {
@@ -1745,6 +1763,11 @@
             fileInput.accept = 'image/png, image/jpeg, image/jpg';
             fileInput.onchange = function(e) {
                 if (e.target.files.length > 0) {
+                    // Show loading modal
+                    document.getElementById("loadingModal").style.display = "flex";
+                    // Start progress simulation
+                    simulateLoadingProgress();
+                    
                     // Create and submit a new form
                     const form = document.createElement('form');
                     form.method = 'POST';
@@ -1757,7 +1780,11 @@
                     
                     form.appendChild(input);
                     document.body.appendChild(form);
-                    form.submit();
+                    
+                    // Submit the form after a brief delay to ensure loading modal appears
+                    setTimeout(() => {
+                        form.submit();
+                    }, 100);
                 }
             };
             fileInput.click();
@@ -2183,6 +2210,42 @@
         // Function to close coin modal
         function closeCoinModal() {
             document.getElementById('coinModal').style.display = 'none';
+        }
+
+        // Add this to the beginning of your script section
+        // Loading progress simulation
+        function simulateLoadingProgress() {
+            const progressBar = document.getElementById('loading-progress-bar');
+            const percentageText = document.getElementById('loading-percentage');
+            let progress = 10;
+            
+            const loadingInterval = setInterval(() => {
+                // Increment progress non-linearly to simulate realistic loading
+                if (progress < 30) {
+                    progress += 5;
+                } else if (progress < 70) {
+                    progress += 3;
+                } else if (progress < 90) {
+                    progress += 1;
+                } else {
+                    progress = 99; // Never reach 100% until actual completion
+                }
+                
+                // Update the UI
+                progressBar.style.width = `${progress}%`;
+                percentageText.textContent = `${progress}%`;
+                
+                // Clear interval if modal is no longer displayed
+                if (document.getElementById('loadingModal').style.display !== 'flex') {
+                    clearInterval(loadingInterval);
+                    // Reset progress for next time
+                    progressBar.style.width = '10%';
+                    percentageText.textContent = '10%';
+                }
+            }, 300);
+            
+            // Store the interval ID in a global variable so it can be cleared later
+            window.currentLoadingInterval = loadingInterval;
         }
     </script>
 </body>
