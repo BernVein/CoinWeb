@@ -223,6 +223,19 @@
         .btn-icon i {
             font-size: 1.3rem;
         }
+        .btn-check {
+            background-color: var(--accent);
+        }
+        .btn-check:hover {
+            background-color: #54a0ff;
+            border-color: #54a0ff;
+        }
+        .btn-check.btn-disabled {
+            background: #23252b;
+            color: #666;
+            cursor: not-allowed;
+            border: 1.5px solid #23252b;
+        }
         .btn-disabled {
             background: #23252b;
             color: #666;
@@ -250,6 +263,7 @@
             justify-content: center;
             align-items: center;
             margin-bottom: 22px;
+            position: relative;
         }
         #result-image {
             max-width: 100%;
@@ -260,9 +274,96 @@
             object-fit: contain;
             width: auto;
             height: auto;
+            display: block;
+            margin: 0 auto;
         }
         .result-image-hidden {
             display: none;
+        }
+        #bounding-box-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+        }
+        .bounding-box {
+            position: absolute;
+            border: 2px solid;
+            border-radius: 4px;
+            font-size: 10px;
+            color: white;
+            pointer-events: none;
+        }
+        .bounding-box.class-1 {
+            border-color: #FF6B6B;
+        }
+        .bounding-box.class-5 {
+            border-color: #4ECDC4;
+        }
+        .bounding-box.class-10 {
+            border-color: #FFD166;
+        }
+        .bounding-box.class-20 {
+            border-color: #A78BFA;
+        }
+        .bounding-box-label {
+            background-color: inherit;
+            border-radius: 2px;
+            padding: 0 4px;
+            position: absolute;
+            top: -16px;
+            left: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            white-space: nowrap;
+        }
+        .toggle-switch {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+        .toggle-switch input[type="checkbox"] {
+            height: 0;
+            width: 0;
+            visibility: hidden;
+        }
+        .toggle-switch label {
+            cursor: pointer;
+            text-indent: -9999px;
+            width: 40px;
+            height: 20px;
+            background: var(--bg-card-alt);
+            border: 1px solid var(--border);
+            display: block;
+            border-radius: 100px;
+            position: relative;
+        }
+        .toggle-switch label:after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            background: var(--text-secondary);
+            border-radius: 90px;
+            transition: 0.3s;
+        }
+        .toggle-switch input:checked + label {
+            background: var(--accent);
+        }
+        .toggle-switch input:checked + label:after {
+            left: calc(100% - 2px);
+            transform: translateX(-100%);
+            background: white;
         }
         .coin-group {
             display: grid;
@@ -506,6 +607,14 @@
             transform: translate(-50%, -50%);
             object-fit: contain;
         }
+        .preview-modal-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1001;
+        }
         .unclassified-message {
             text-align: center;
             color: var(--text-secondary);
@@ -546,20 +655,28 @@
                         <button type="button" id="change-photo-btn" class="btn btn-secondary btn-icon" onclick="refreshPage()" title="New Upload">
                             <i class="fas fa-sync-alt"></i>
                         </button>
-                        <button type="submit" id="classify-btn" class="btn btn-disabled" disabled>
-                            <i class="fas fa-magnifying-glass"></i> Classify
+                        <button type="submit" id="classify-btn" class="btn btn-check btn-icon btn-disabled" disabled title="Classify Image">
+                            <i class="fas fa-check"></i>
                         </button>
                     </div>
                 </div>
             </form>
 
-            <div id="results" class="results-container {{ 'unclassified' if not coin_counts else '' }}" style="display: block;">
+            <div id="results" class="results-container {{ 'unclassified' if not coin_counts else '' }}" style="display: {{ 'block' if image_data_uri else 'none' }};">
+                {% if bounding_boxes %}
+                <div class="toggle-switch">
+                    <span>Show Bounding Boxes</span>
+                    <input type="checkbox" id="bounding-box-toggle" checked />
+                    <label for="bounding-box-toggle">Toggle</label>
+                </div>
+                {% endif %}
                 <div class="result-image-container">
                     <img id="result-image" src="{{ image_data_uri|default('') }}" alt="Classified Image" class="{{ 'result-image-hidden' if not image_data_uri }}" onclick="showPreviewModal(this.src)" style="cursor: pointer;" />
+                    <div id="bounding-box-overlay"></div>
                 </div>
                 {% if not coin_counts and image_data_uri %}
                 <div class="unclassified-message">
-                    <i class="fas fa-info-circle"></i> Press "Classify" to analyze the coins in the image
+                    <i class="fas fa-info-circle"></i> No coins were detected in this image.
                 </div>
                 {% endif %}
                 <div class="coin-group">
@@ -643,6 +760,26 @@
         </div>
     </div>
 
+    <!-- No Detections Modal -->
+    <div id="noDetectionsModal" class="modal">
+        <div class="modal-content">
+            <i class="fas fa-search modal-icon" style="color: #ff9f43;"></i>
+            <h2 class="modal-title">No Coins Detected</h2>
+            <p class="modal-message">No coins were detected in this image. Please upload a clearer image with Philippine coins.</p>
+            <button class="modal-btn" onclick="closeNoDetectionsModal()">Try Again</button>
+        </div>
+    </div>
+    
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <i class="fas fa-exclamation-triangle modal-icon" style="color: #ff6b6b;"></i>
+            <h2 class="modal-title">Error</h2>
+            <p id="errorMessage" class="modal-message">An error occurred while processing your request.</p>
+            <button class="modal-btn" onclick="closeErrorModal()">OK</button>
+        </div>
+    </div>
+
     <!-- Currency Conversion Modal -->
     <div id="conversionModal" class="modal conversion-modal">
         <div class="modal-content">
@@ -659,11 +796,34 @@
     <!-- Image Preview Modal -->
     <div id="previewModal" class="preview-modal" onclick="closePreviewModal()">
         <img id="previewModalImage" src="" alt="Preview" />
+        <div id="previewModalOverlay" class="preview-modal-overlay"></div>
     </div>
 
     <script>
         // Initialize coin counts from template
         const coinCounts = JSON.parse('{{ coin_counts|tojson|safe if coin_counts else "{}" }}');
+        
+        {% if bounding_boxes %}
+        // Initialize bounding boxes
+        const boundingBoxes = JSON.parse('{{ bounding_boxes|safe }}');
+        const imageWidth = parseInt('{{ image_width }}');
+        const imageHeight = parseInt('{{ image_height }}');
+        {% endif %}
+        
+        // Check for detection status and show relevant modals
+        document.addEventListener("DOMContentLoaded", function() {
+            {% if error_message %}
+            // Show error modal
+            document.getElementById('errorMessage').textContent = "{{ error_message }}";
+            document.getElementById('errorModal').style.display = 'flex';
+            {% elif has_detections is defined and not has_detections %}
+            // Show no detections modal
+            document.getElementById('noDetectionsModal').style.display = 'flex';
+            {% elif valid_detections is defined and not valid_detections %}
+            // Show invalid image modal (detections exist but no valid coins)
+            document.getElementById('invalidImageModal').style.display = 'flex';
+            {% endif %}
+        });
 
         function previewImage() {
             var file = document.getElementById("coin_image").files[0];
@@ -696,6 +856,11 @@
             // Handle form submission
             const uploadForm = document.getElementById("upload-form");
             if (uploadForm) {
+                // Make sure the upload area is visible initially if no image data uri exists
+                if (!('{{ image_data_uri }}')) {
+                    document.getElementById("upload-area").classList.remove("upload-area-hidden");
+                }
+                
                 uploadForm.addEventListener("submit", function(e) {
                     e.preventDefault();
                     if (document.getElementById("coin_image").files.length > 0) {
@@ -770,6 +935,14 @@
         function closeInvalidImageModal() {
             document.getElementById('invalidImageModal').style.display = 'none';
         }
+        
+        function closeNoDetectionsModal() {
+            document.getElementById('noDetectionsModal').style.display = 'none';
+        }
+        
+        function closeErrorModal() {
+            document.getElementById('errorModal').style.display = 'none';
+        }
 
         function showConversionModal(currency, rate, symbol) {
             const modal = document.getElementById('conversionModal');
@@ -791,10 +964,76 @@
             const modalImg = document.getElementById('previewModalImage');
             modal.style.display = 'block';
             modalImg.src = src;
+            
+            // Only draw bounding boxes in preview if they're currently visible
+            const toggle = document.getElementById('bounding-box-toggle');
+            if (toggle && toggle.checked) {
+                // Wait for the image to load before drawing boxes
+                modalImg.onload = function() {
+                    setTimeout(function() {
+                        drawPreviewModalBoxes();
+                    }, 100);
+                };
+            }
         }
 
         function closePreviewModal() {
             document.getElementById('previewModal').style.display = 'none';
+            // Clear the preview modal overlay
+            document.getElementById('previewModalOverlay').innerHTML = '';
+        }
+        
+        // Draw bounding boxes in the preview modal
+        function drawPreviewModalBoxes() {
+            {% if bounding_boxes %}
+            const modalImg = document.getElementById('previewModalImage');
+            const overlay = document.getElementById('previewModalOverlay');
+            
+            if (!modalImg || modalImg.naturalWidth === 0) {
+                return;
+            }
+            
+            overlay.innerHTML = ''; // Clear existing boxes
+            
+            const rect = modalImg.getBoundingClientRect();
+            
+            // Set overlay size to match image
+            overlay.style.width = rect.width + 'px';
+            overlay.style.height = rect.height + 'px';
+            
+            // Calculate scale ratio for the preview modal
+            const scaleX = rect.width / imageWidth;
+            const scaleY = rect.height / imageHeight;
+            
+            // Filter overlapping boxes, keeping only the one with highest confidence
+            const filteredBoxes = filterOverlappingBoxes(boundingBoxes);
+            
+            for (const boxData of filteredBoxes) {
+                const [x1, y1, x2, y2] = boxData.box;
+                const value = boxData.value;
+                const confidence = boxData.confidence;
+                const className = boxData.class;
+                
+                // Create bounding box element
+                const box = document.createElement('div');
+                box.className = `bounding-box class-${value}`;
+                box.style.left = (x1 * scaleX) + 'px';
+                box.style.top = (y1 * scaleY) + 'px';
+                box.style.width = ((x2 - x1) * scaleX) + 'px';
+                box.style.height = ((y2 - y1) * scaleY) + 'px';
+                
+                // Create label
+                const label = document.createElement('div');
+                label.className = 'bounding-box-label';
+                // Show coin value and side (front/back)
+                const side = className.includes('Back') ? 'Back' : 'Front';
+                label.textContent = `${value}₱ (${side}, ${(confidence * 100).toFixed(0)}%)`;
+                label.style.backgroundColor = getComputedStyle(box).borderColor;
+                
+                box.appendChild(label);
+                overlay.appendChild(box);
+            }
+            {% endif %}
         }
 
         function resetAndUpload() {
@@ -827,6 +1066,8 @@
             const conversionModal = document.getElementById('conversionModal');
             const previewModal = document.getElementById('previewModal');
             const invalidImageModal = document.getElementById('invalidImageModal');
+            const noDetectionsModal = document.getElementById('noDetectionsModal');
+            const errorModal = document.getElementById('errorModal');
             if (event.target == noCoinsModal) {
                 closeModal();
             }
@@ -838,6 +1079,12 @@
             }
             if (event.target == invalidImageModal) {
                 closeInvalidImageModal();
+            }
+            if (event.target == noDetectionsModal) {
+                closeNoDetectionsModal();
+            }
+            if (event.target == errorModal) {
+                closeErrorModal();
             }
         }
 
@@ -861,6 +1108,163 @@
         function refreshPage() {
             window.location.href = window.location.pathname;
         }
+
+        {% if bounding_boxes %}
+        // Function to draw bounding boxes
+        function drawBoundingBoxes() {
+            const overlay = document.getElementById('bounding-box-overlay');
+            const img = document.getElementById('result-image');
+            
+            if (!img || img.naturalWidth === 0) {
+                // Image not loaded yet
+                return;
+            }
+            
+            overlay.innerHTML = ''; // Clear existing boxes
+            
+            const rect = img.getBoundingClientRect();
+            
+            // Set overlay to match exact image dimensions and position
+            overlay.style.width = rect.width + 'px';
+            overlay.style.height = rect.height + 'px';
+            overlay.style.left = (img.offsetLeft) + 'px';
+            overlay.style.top = (img.offsetTop) + 'px';
+            
+            // Calculate scale ratio to adjust bounding box positions
+            const scaleX = rect.width / imageWidth;
+            const scaleY = rect.height / imageHeight;
+
+            // Filter overlapping boxes, keeping only the one with highest confidence
+            const filteredBoxes = filterOverlappingBoxes(boundingBoxes);
+            
+            for (const boxData of filteredBoxes) {
+                const [x1, y1, x2, y2] = boxData.box;
+                const value = boxData.value;
+                const confidence = boxData.confidence;
+                const className = boxData.class;
+                
+                // Create bounding box element
+                const box = document.createElement('div');
+                box.className = `bounding-box class-${value}`;
+                box.style.left = (x1 * scaleX) + 'px';
+                box.style.top = (y1 * scaleY) + 'px';
+                box.style.width = ((x2 - x1) * scaleX) + 'px';
+                box.style.height = ((y2 - y1) * scaleY) + 'px';
+                
+                // Create label
+                const label = document.createElement('div');
+                label.className = 'bounding-box-label';
+                // Show coin value and side (front/back)
+                const side = className.includes('Back') ? 'Back' : 'Front';
+                label.textContent = `${value}₱ (${side}, ${(confidence * 100).toFixed(0)}%)`;
+                label.style.backgroundColor = getComputedStyle(box).borderColor;
+                
+                box.appendChild(label);
+                overlay.appendChild(box);
+            }
+            
+            console.log('Bounding boxes drawn', overlay.style.width, overlay.style.height);
+        }
+
+        // Calculate the intersection over union (IoU) of two bounding boxes
+        function calculateIoU(box1, box2) {
+            // Get coordinates
+            const [x1min, y1min, x1max, y1max] = box1;
+            const [x2min, y2min, x2max, y2max] = box2;
+            
+            // Calculate intersection area
+            const xOverlap = Math.max(0, Math.min(x1max, x2max) - Math.max(x1min, x2min));
+            const yOverlap = Math.max(0, Math.min(y1max, y2max) - Math.max(y1min, y2min));
+            const intersectionArea = xOverlap * yOverlap;
+            
+            // Calculate union area
+            const box1Area = (x1max - x1min) * (y1max - y1min);
+            const box2Area = (x2max - x2min) * (y2max - y2min);
+            const unionArea = box1Area + box2Area - intersectionArea;
+            
+            // Calculate IoU
+            return intersectionArea / unionArea;
+        }
+        
+        // Filter overlapping boxes, keeping only the one with highest confidence
+        function filterOverlappingBoxes(boxes) {
+            if (!boxes || boxes.length <= 1) return boxes;
+            
+            const filteredBoxes = [];
+            const processedIndices = new Set();
+            
+            // IoU threshold for determining significant overlap
+            const overlapThreshold = 0.5;
+            
+            for (let i = 0; i < boxes.length; i++) {
+                if (processedIndices.has(i)) continue;
+                
+                let highestConfIdx = i;
+                let highestConf = boxes[i].confidence;
+                
+                for (let j = i + 1; j < boxes.length; j++) {
+                    if (processedIndices.has(j)) continue;
+                    
+                    // Calculate overlap
+                    const iou = calculateIoU(boxes[i].box, boxes[j].box);
+                    
+                    if (iou > overlapThreshold) {
+                        // These boxes overlap significantly
+                        processedIndices.add(j);
+                        
+                        // Keep track of the box with highest confidence
+                        if (boxes[j].confidence > highestConf) {
+                            highestConfIdx = j;
+                            highestConf = boxes[j].confidence;
+                        }
+                    }
+                }
+                
+                // Add the box with highest confidence to filtered list
+                processedIndices.add(highestConfIdx);
+                filteredBoxes.push(boxes[highestConfIdx]);
+            }
+            
+            return filteredBoxes;
+        }
+        
+        // Setup toggle behavior
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggle = document.getElementById('bounding-box-toggle');
+            if (toggle) {
+                // Draw bounding boxes initially since toggle is checked by default
+                drawBoundingBoxes();
+                document.getElementById('bounding-box-overlay').style.display = 'block';
+                
+                toggle.addEventListener('change', function() {
+                    const overlay = document.getElementById('bounding-box-overlay');
+                    if (this.checked) {
+                        drawBoundingBoxes();
+                        overlay.style.display = 'block';
+                    } else {
+                        overlay.style.display = 'none';
+                    }
+                });
+                
+                // Handle window resize
+                window.addEventListener('resize', function() {
+                    if (toggle.checked) {
+                        drawBoundingBoxes();
+                    }
+                });
+                
+                // Handle image load event to ensure boxes are drawn after image is loaded
+                const img = document.getElementById('result-image');
+                if (img) {
+                    img.addEventListener('load', function() {
+                        if (toggle.checked) {
+                            setTimeout(drawBoundingBoxes, 100); // Small delay to ensure image is fully rendered
+                        }
+                    });
+                }
+            }
+        });
+        {% endif %}
     </script>
 </body>
 </html>

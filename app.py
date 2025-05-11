@@ -1,9 +1,10 @@
 from flask import Flask, request, render_template
-from PIL import Image
+from PIL import Image, ImageDraw
 from ultralytics import YOLO
 import os
 import base64
 from io import BytesIO
+import json
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -17,9 +18,13 @@ model = YOLO(model_path)
 # Mapping class names to denominations
 denomination_map = {
     '5 Front': 5,
+    '5 Back': 5,
     '10 Front': 10,
+    '10 Back': 10,
     '1_Front': 1,
-    '20 Front': 20  # Added 20 PHP coin
+    '1_Back': 1,
+    '20 Front': 20,
+    '20 Back': 20
 }
 
 # Define a function for classifying the coin and counting them
@@ -35,16 +40,33 @@ def classify_coin_and_count(image):
     total_amount = 0
     coin_counts = {5: 0, 10: 0, 1: 0, 20: 0}  # Added 20 PHP coin
     
+    # Store bounding box data to pass to frontend
+    bounding_boxes = []
+    
+    # Check if there are any detections at all
+    has_detections = len(boxes) > 0
+    valid_detections = False
+    
     for i, box in enumerate(boxes):
         class_name = results[0].names[int(labels[i])]
+        confidence = float(confidences[i])
         
         # Only count valid coin types (5 Front, 10 Front, 1 Front, 20 Front)
         if class_name in denomination_map:
+            valid_detections = True
             coin_value = denomination_map[class_name]
             coin_counts[coin_value] += 1
             total_amount += coin_value
+            
+            # Add bounding box info to list
+            bounding_boxes.append({
+                'box': box.tolist(),  # Convert tensor to list: [x_min, y_min, x_max, y_max]
+                'class': class_name,
+                'confidence': confidence,
+                'value': coin_value
+            })
     
-    return coin_counts, total_amount
+    return coin_counts, total_amount, bounding_boxes, has_detections, valid_detections
 
 # Function to convert PIL Image to base64 string for display
 def image_to_data_uri(img):
@@ -69,17 +91,26 @@ def index():
                 image_data_uri = image_to_data_uri(image)
                 
                 # Classify the image, count the coins, and calculate the total
-                coin_counts, total_amount = classify_coin_and_count(image)
+                coin_counts, total_amount, bounding_boxes, has_detections, valid_detections = classify_coin_and_count(image)
                 
                 # Remove keys with zero counts
                 coin_counts = {k: v for k, v in coin_counts.items() if v > 0}
                 
                 # Render the result on the webpage
-                return render_template("index.html", coin_counts=coin_counts, total_amount=total_amount, image_data_uri=image_data_uri)
+                return render_template("index.html", 
+                                      coin_counts=coin_counts, 
+                                      total_amount=total_amount, 
+                                      image_data_uri=image_data_uri,
+                                      bounding_boxes=json.dumps(bounding_boxes),
+                                      image_width=image.width,
+                                      image_height=image.height,
+                                      has_detections=has_detections,
+                                      valid_detections=valid_detections)
             except Exception as e:
-                return f"Error processing image: {e}", 400
+                error_message = f"Error processing image: {str(e)}"
+                return render_template("index.html", error_message=error_message)
         else:
-            return "Please upload a valid image file (PNG, JPG, JPEG).", 400
+            return render_template("index.html", error_message="Please upload a valid image file (PNG, JPG, JPEG).")
     
     return render_template("index.html")
 
