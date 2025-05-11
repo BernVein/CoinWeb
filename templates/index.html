@@ -4,13 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PH Coin Classifier</title>
+    <style>
+        #image-preview {
+            margin-top: 20px;
+            max-width: 100%;
+            max-height: 300px;
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <h1>Classify a Philippine Coin</h1>
     <form action="/" method="post" enctype="multipart/form-data">
-        <input type="file" name="coin_image" />
+        <input type="file" name="coin_image" id="coin_image" onchange="previewImage()" />
         <input type="submit" value="Classify" />
     </form>
+
+    <!-- Image preview -->
+    <div id="image-preview-container">
+        <img id="image-preview" src="" alt="Image Preview" />
+    </div>
 
     {% if coin_counts %}
         <h2>Classified Coins:</h2>
@@ -21,5 +34,25 @@
         </ul>
         <h3>Total Amount: {{ total_amount }} pesos</h3>
     {% endif %}
+
+    <script>
+        function previewImage() {
+            var file = document.getElementById("coin_image").files[0];
+            var reader = new FileReader();
+
+            reader.onloadend = function() {
+                var imgPreview = document.getElementById("image-preview");
+                imgPreview.src = reader.result;
+                imgPreview.style.display = "block";
+            }
+
+            if (file) {
+                reader.readAsDataURL(file); // This will trigger the reader.onloadend event
+            } else {
+                var imgPreview = document.getElementById("image-preview");
+                imgPreview.style.display = "none";
+            }
+        }
+    </script>
 </body>
 </html>
