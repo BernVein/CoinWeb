@@ -12,17 +12,14 @@
         <input type="submit" value="Classify" />
     </form>
 
-    {% if detections %}
+    {% if coin_counts %}
         <h2>Classified Coins:</h2>
         <ul>
-            {% for detection in detections %}
-                <li>
-                    Coin: {{ detection.class }}<br>
-                    Confidence: {{ detection.confidence }}<br>
-                    Bounding Box: {{ detection.box }}
-                </li>
+            {% for coin, count in coin_counts.items() %}
+                <li>Coin Value: {{ coin }} pesos | Count: {{ count }}</li>
             {% endfor %}
         </ul>
+        <h3>Total Amount: {{ total_amount }} pesos</h3>
     {% endif %}
 </body>
 </html>
