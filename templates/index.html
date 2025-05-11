@@ -429,11 +429,30 @@
             margin-bottom: 6px;
         }
         
+        /* Update the peso sign styling for better cross-platform compatibility */
         .peso-sign {
             font-size: 1.1rem;
             vertical-align: baseline;
             margin-right: 2px;
+            font-family: 'Inter', Arial, sans-serif, 'Segoe UI Symbol', 'Noto Sans', sans-serif;
+            /* Ensure the peso sign is properly displayed on all devices */
+            display: inline-block;
+            font-weight: normal;
         }
+        
+        @media (max-width: 480px) {
+            .peso-sign {
+                font-size: 0.9rem;
+            }
+        }
+        
+        /* Add Font Face declaration for better peso sign compatibility */
+        @font-face {
+            font-family: 'PesoCompatible';
+            src: local('Arial'), local('Segoe UI Symbol'), local('Noto Sans');
+            unicode-range: U+20B1; /* Peso sign unicode range */
+        }
+        
         .coin-count {
             display: block;
             font-size: var(--font-size-sm);
@@ -573,8 +592,12 @@
             background: rgba(0,0,0,0.8);
             backdrop-filter: blur(4px);
             z-index: 1000;
-            align-items: center;
+            align-items: flex-start; /* Changed from center to allow scrolling */
             justify-content: center;
+            padding: 0 20px;
+            box-sizing: border-box;
+            overflow-y: auto; /* Enable vertical scrolling */
+            -webkit-overflow-scrolling: touch; /* For smooth scrolling on iOS */
         }
         .modal-content {
             background: var(--bg-card);
@@ -586,7 +609,9 @@
             border: 1.5px solid var(--border);
             animation: modalFadeIn 0.3s ease-out;
             box-sizing: border-box;
-            margin: 0 auto;
+            margin: 20px auto; /* Add top/bottom margin for spacing */
+            max-height: calc(100vh - 40px); /* Limit height to prevent overflow */
+            overflow-y: auto; /* Enable scrolling inside the content if needed */
         }
         .modal-icon {
             font-size: 3rem;
@@ -1156,10 +1181,12 @@
             background: rgba(0,0,0,0.8);
             backdrop-filter: blur(4px);
             z-index: 1000;
-            align-items: center;
+            align-items: flex-start; /* Changed from center to allow scrolling */
             justify-content: center;
             padding: 0 20px;
             box-sizing: border-box;
+            overflow-y: auto; /* Enable vertical scrolling */
+            -webkit-overflow-scrolling: touch; /* For smooth scrolling on iOS */
         }
         
         .modal-content, .coin-modal-content {
@@ -1172,7 +1199,9 @@
             border: 1.5px solid var(--border);
             animation: modalFadeIn 0.3s ease-out;
             box-sizing: border-box;
-            margin: 0 auto;
+            margin: 20px auto; /* Add top/bottom margin for spacing */
+            max-height: calc(100vh - 40px); /* Limit height to prevent overflow */
+            overflow-y: auto; /* Enable scrolling inside the content if needed */
         }
         
         /* Mobile styling improvements */
@@ -1211,6 +1240,20 @@
                 padding: 20px 16px;
                 max-width: 90%;
                 width: auto;
+                margin: 15px auto; /* Reduced margin for smaller screens */
+            }
+            
+            /* Ensure coin-modal-content is scrollable with large content */
+            .coin-modal-content {
+                max-height: calc(100vh - 30px);
+                overflow-y: auto;
+            }
+            
+            /* Make coin crops container scrollable when it has many items */
+            .coin-crops-container {
+                max-height: 60vh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
             }
             
             .modal-icon {
@@ -1662,8 +1705,10 @@
                 ${trendPercentage}%
             </span>`;
             
-            rateElement.innerHTML = `₱1 = ${symbol}${displayRate.toFixed(4)}${trendHtml}`;
-            exampleElement.textContent = `${symbol}1 = ₱${(1/displayRate).toFixed(2)}`;
+            // Use standard peso sign with fallback mechanism
+            const pesoSign = '<span class="peso-sign">₱</span>';
+            rateElement.innerHTML = `${pesoSign}1 = ${symbol}${displayRate.toFixed(4)}${trendHtml}`;
+            exampleElement.innerHTML = `${symbol}1 = ${pesoSign}${(1/displayRate).toFixed(2)}`;
             
             // Show last updated time if available
             if (lastUpdated) {
@@ -2247,6 +2292,33 @@
             // Store the interval ID in a global variable so it can be cleared later
             window.currentLoadingInterval = loadingInterval;
         }
+
+        // Helper function to ensure peso sign is properly displayed
+        function ensurePesoSignCompatibility() {
+            // Test if peso sign is supported in current browser
+            const testElement = document.createElement('span');
+            testElement.textContent = '₱';
+            
+            // If peso sign isn't rendered properly or has zero width, use fallback
+            if (testElement.offsetWidth === 0 || !testElement.textContent) {
+                // Apply fallback class to all peso signs
+                document.querySelectorAll('.peso-sign').forEach(el => {
+                    el.classList.add('peso-sign-fallback');
+                    // Use PHP as fallback if needed
+                    if (!el.textContent || el.textContent.trim() === '') {
+                        el.textContent = 'PHP';
+                    }
+                });
+            }
+        }
+
+        // Call compatibility check when DOM is loaded
+        document.addEventListener("DOMContentLoaded", function() {
+            // Existing code...
+            
+            // Check peso sign compatibility
+            ensurePesoSignCompatibility();
+        });
     </script>
 </body>
 </html>
