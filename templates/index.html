@@ -431,7 +431,7 @@
         
         /* Update the peso sign styling for better cross-platform compatibility */
         .peso-sign {
-            font-size: 1.1rem;
+            font-size: inherit; /* Match parent font size */
             vertical-align: baseline;
             margin-right: 2px;
             font-family: 'Inter', Arial, sans-serif, 'Segoe UI Symbol', 'Noto Sans', sans-serif;
@@ -442,7 +442,7 @@
         
         @media (max-width: 480px) {
             .peso-sign {
-                font-size: 0.9rem;
+                font-size: inherit; /* Match parent font size */
             }
         }
         
@@ -592,7 +592,7 @@
             background: rgba(0,0,0,0.8);
             backdrop-filter: blur(4px);
             z-index: 1000;
-            align-items: flex-start; /* Changed from center to allow scrolling */
+            align-items: center; /* Changed from flex-start to center */
             justify-content: center;
             padding: 0 20px;
             box-sizing: border-box;
@@ -609,7 +609,7 @@
             border: 1.5px solid var(--border);
             animation: modalFadeIn 0.3s ease-out;
             box-sizing: border-box;
-            margin: 20px auto; /* Add top/bottom margin for spacing */
+            margin: 0 auto; /* Changed from 20px auto to 0 auto for perfect centering */
             max-height: calc(100vh - 40px); /* Limit height to prevent overflow */
             overflow-y: auto; /* Enable scrolling inside the content if needed */
         }
@@ -1181,7 +1181,7 @@
             background: rgba(0,0,0,0.8);
             backdrop-filter: blur(4px);
             z-index: 1000;
-            align-items: flex-start; /* Changed from center to allow scrolling */
+            align-items: center; /* Changed from flex-start to center */
             justify-content: center;
             padding: 0 20px;
             box-sizing: border-box;
@@ -1199,7 +1199,7 @@
             border: 1.5px solid var(--border);
             animation: modalFadeIn 0.3s ease-out;
             box-sizing: border-box;
-            margin: 20px auto; /* Add top/bottom margin for spacing */
+            margin: 0 auto; /* Changed from 20px auto to 0 auto for perfect centering */
             max-height: calc(100vh - 40px); /* Limit height to prevent overflow */
             overflow-y: auto; /* Enable scrolling inside the content if needed */
         }
@@ -1233,6 +1233,8 @@
             .coin-modal,
             .preview-modal {
                 padding: 0 15px;
+                align-items: center; /* Ensure center alignment on mobile */
+                justify-content: center;
             }
             
             .modal-content,
@@ -1240,7 +1242,7 @@
                 padding: 20px 16px;
                 max-width: 90%;
                 width: auto;
-                margin: 15px auto; /* Reduced margin for smaller screens */
+                margin: 0 auto; /* Changed from 15px auto to 0 auto for perfect centering */
             }
             
             /* Ensure coin-modal-content is scrollable with large content */
@@ -1376,7 +1378,7 @@
                     </div>
                 </div>
                 <div class="total-amount">
-                    Total Amount: ₱{{ total_amount|default('0') }}
+                    Total Amount: <span class="peso-sign">₱</span>{{ total_amount|default('0') }}
                 </div>
                 <div class="conversion-grid">
                     <div class="conversion-item" onclick="showConversionModal('USD', 0.018, '$')">
@@ -1793,7 +1795,7 @@
                 label.className = 'bounding-box-label';
                 // Show coin value and side (front/back)
                 const side = className.includes('Back') ? 'Back' : 'Front';
-                label.textContent = `₱${value} (${side}, ${(confidence * 100).toFixed(0)}%)`;
+                label.innerHTML = `<span class="peso-sign">₱</span>${value} (${side}, ${(confidence * 100).toFixed(0)}%)`;
                 label.style.backgroundColor = getComputedStyle(box).borderColor;
                 
                 box.appendChild(label);
@@ -1974,7 +1976,7 @@
                 label.className = 'bounding-box-label';
                 // Show coin value and side (front/back)
                 const side = className.includes('Back') ? 'Back' : 'Front';
-                label.textContent = `₱${value} (${side}, ${(confidence * 100).toFixed(0)}%)`;
+                label.innerHTML = `<span class="peso-sign">₱</span>${value} (${side}, ${(confidence * 100).toFixed(0)}%)`;
                 label.style.backgroundColor = getComputedStyle(box).borderColor;
                 
                 box.appendChild(label);
