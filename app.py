@@ -25,13 +25,36 @@ def load_model():
             # Fix for PyTorch 2.6+ weights_only=True default
             # Add safe globals to allow loading YOLO model
             model_load_status = {"status": "initializing", "progress": 10}
-            torch.serialization.add_safe_globals([
+            
+            # Get a list of safe globals to add
+            safe_globals = [
                 ultralytics.nn.tasks.DetectionModel,
                 ultralytics.nn.modules.Conv,
                 ultralytics.nn.modules.block.C2f,
-                ultralytics.nn.modules.block.SPPF,
-                ultralytics.nn.modules.Head
-            ])
+                ultralytics.nn.modules.block.SPPF
+            ]
+            
+            # Dynamically check if Head module exists
+            try:
+                head_module = getattr(ultralytics.nn.modules, 'Head')
+                safe_globals.append(head_module)
+                print("Added Head module to safe globals")
+            except AttributeError:
+                # Head module doesn't exist in this version
+                print("Head module not found in ultralytics.nn.modules, skipping")
+                
+                # Try to find alternative modules for different Ultralytics versions
+                try:
+                    import ultralytics.nn.modules.head
+                    head_module = ultralytics.nn.modules.head.Detect
+                    safe_globals.append(head_module)
+                    print("Added Detect module to safe globals")
+                except (ImportError, AttributeError):
+                    print("Could not find alternative head modules")
+            
+            # Add all safe globals to torch serialization
+            for sg in safe_globals:
+                torch.serialization.add_safe_globals([sg])
             
             # Use model from the repository
             model_path = os.path.join("models", "PHCoinClassifier", "best.pt")

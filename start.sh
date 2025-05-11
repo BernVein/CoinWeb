@@ -10,5 +10,5 @@ pip --version
 echo "Installed packages:"
 pip list
 
-# Start application with gunicorn
-exec gunicorn app:app --bind 0.0.0.0:$PORT --log-level info 
+# Start application with gunicorn with increased timeouts
+exec gunicorn app:app --bind 0.0.0.0:$PORT --log-level info --timeout 120 --workers 1 

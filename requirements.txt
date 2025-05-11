@@ -1,6 +1,6 @@
 flask==2.3.3
 Pillow==9.5.0
-ultralytics==8.0.196
+ultralytics==8.0.20
 numpy>=1.22.0
 torch>=1.7.0
 gunicorn==20.1.0 
