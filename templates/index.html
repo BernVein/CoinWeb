@@ -22,10 +22,10 @@
             --radius: 24px;
             --radius-sm: 16px;
             --transition: all 0.3s cubic-bezier(.4,0,.2,1);
-            --font-size-sm: 0.9rem;
-            --font-size-base: 1rem;
-            --font-size-lg: 1.1rem;
-            --font-size-xl: 1.2rem;
+            --font-size-sm: 0.8rem;
+            --font-size-base: 0.9rem;
+            --font-size-lg: 1rem;
+            --font-size-xl: 1.1rem;
         }
         html, body {
             height: 100%;
@@ -133,6 +133,10 @@
             justify-content: center;
             align-items: center;
             margin-bottom: 22px;
+            height: 240px;
+            background-color: var(--bg-card-alt);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
         }
         #image-preview {
             max-width: 100%;
@@ -147,10 +151,16 @@
         }
         .buttons-group {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             gap: 14px;
             width: 100%;
             margin-top: 8px;
+        }
+        @media (min-width: 480px) {
+            .buttons-group {
+                flex-direction: row;
+            }
         }
         .btn {
             background: var(--accent);
@@ -162,7 +172,7 @@
             font-weight: 600;
             padding: 14px 0;
             width: 100%;
-            max-width: 200px;
+            max-width: 240px;
             margin: 0;
             cursor: pointer;
             transition: var(--transition);
@@ -200,6 +210,18 @@
             color: var(--accent);
             border-color: var(--accent);
             transform: translateY(-2px);
+        }
+        .btn-icon {
+            max-width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .btn-icon i {
+            font-size: 1.3rem;
         }
         .btn-disabled {
             background: #23252b;
@@ -463,6 +485,43 @@
         .upload-area-hidden {
             display: none !important;
         }
+        .preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            cursor: pointer;
+        }
+        .preview-modal img {
+            max-width: 90%;
+            max-height: 90vh;
+            margin: auto;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            object-fit: contain;
+        }
+        .unclassified-message {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: var(--font-size-base);
+            margin: 20px 0;
+            padding: 16px;
+            background: var(--bg-card-alt);
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border);
+        }
+        .results-container.unclassified .coin-group,
+        .results-container.unclassified .total-amount,
+        .results-container.unclassified .conversion-grid {
+            opacity: 0.5;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -479,42 +538,49 @@
                         <input type="file" name="coin_image" id="coin_image" class="file-input" accept="image/png, image/jpeg, image/jpg" onchange="previewImage()" />
                     </label>
                 </div>
-                <div id="image-preview-container">
-                    <img id="image-preview" src="" alt="Image Preview" />
-                </div>
-                <div id="buttons-container" class="buttons-group">
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('coin_image').click()">
-                        <i class="fas fa-upload"></i> Choose Photo
-                    </button>
-                    <button type="submit" id="classify-btn" class="btn btn-disabled" disabled>
-                        <i class="fas fa-magnifying-glass"></i> Classify
-                    </button>
+                <div id="preview-section" style="display: none; width: 100%;">
+                    <div id="image-preview-container">
+                        <img id="image-preview" src="" alt="Image Preview" />
+                    </div>
+                    <div id="buttons-container" class="buttons-group">
+                        <button type="button" id="change-photo-btn" class="btn btn-secondary btn-icon" onclick="refreshPage()" title="New Upload">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button type="submit" id="classify-btn" class="btn btn-disabled" disabled>
+                            <i class="fas fa-magnifying-glass"></i> Classify
+                        </button>
+                    </div>
                 </div>
             </form>
 
-            <div id="results" class="results-container" style="display: block;">
+            <div id="results" class="results-container {{ 'unclassified' if not coin_counts else '' }}" style="display: block;">
                 <div class="result-image-container">
-                    <img id="result-image" src="{{ image_data_uri|default('') }}" alt="Classified Image" class="{{ 'result-image-hidden' if not image_data_uri }}" />
+                    <img id="result-image" src="{{ image_data_uri|default('') }}" alt="Classified Image" class="{{ 'result-image-hidden' if not image_data_uri }}" onclick="showPreviewModal(this.src)" style="cursor: pointer;" />
                 </div>
+                {% if not coin_counts and image_data_uri %}
+                <div class="unclassified-message">
+                    <i class="fas fa-info-circle"></i> Press "Classify" to analyze the coins in the image
+                </div>
+                {% endif %}
                 <div class="coin-group">
                     <div class="coin-row">
                         <div class="coin-card">
                             <div class="coin-value">1<span class="peso-sign">₱</span></div>
-                            <span class="coin-count">{{ (coin_counts|default({})).get('1', 0) }} coin{{ 's' if (coin_counts|default({})).get('1', 0) != 1 else '' }}</span>
+                            <span class="coin-count" id="coin-count-1">{{ (coin_counts|default({})).get('1', 0) }} coin{{ 's' if (coin_counts|default({})).get('1', 0) != 1 else '' }}</span>
                         </div>
                         <div class="coin-card">
                             <div class="coin-value">5<span class="peso-sign">₱</span></div>
-                            <span class="coin-count">{{ (coin_counts|default({})).get('5', 0) }} coin{{ 's' if (coin_counts|default({})).get('5', 0) != 1 else '' }}</span>
+                            <span class="coin-count" id="coin-count-5">{{ (coin_counts|default({})).get('5', 0) }} coin{{ 's' if (coin_counts|default({})).get('5', 0) != 1 else '' }}</span>
                         </div>
                     </div>
                     <div class="coin-row">
                         <div class="coin-card">
                             <div class="coin-value">10<span class="peso-sign">₱</span></div>
-                            <span class="coin-count">{{ (coin_counts|default({})).get('10', 0) }} coin{{ 's' if (coin_counts|default({})).get('10', 0) != 1 else '' }}</span>
+                            <span class="coin-count" id="coin-count-10">{{ (coin_counts|default({})).get('10', 0) }} coin{{ 's' if (coin_counts|default({})).get('10', 0) != 1 else '' }}</span>
                         </div>
                         <div class="coin-card">
                             <div class="coin-value">20<span class="peso-sign">₱</span></div>
-                            <span class="coin-count">{{ (coin_counts|default({})).get('20', 0) }} coin{{ 's' if (coin_counts|default({})).get('20', 0) != 1 else '' }}</span>
+                            <span class="coin-count" id="coin-count-20">{{ (coin_counts|default({})).get('20', 0) }} coin{{ 's' if (coin_counts|default({})).get('20', 0) != 1 else '' }}</span>
                         </div>
                     </div>
                 </div>
@@ -539,6 +605,14 @@
                         <div class="conversion-value">£{{ "%.2f"|format((total_amount|default(0)|float) * 0.014) }}</div>
                     </div>
                 </div>
+                
+                {% if coin_counts %}
+                <div style="margin-top: 22px; width: 100%;">
+                    <button id="upload-again-btn" class="btn" onclick="resetAndUpload()">
+                        <i class="fas fa-upload"></i> Upload Again
+                    </button>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -559,6 +633,16 @@
         </div>
     </div>
 
+    <!-- Invalid Image Modal -->
+    <div id="invalidImageModal" class="modal">
+        <div class="modal-content">
+            <i class="fas fa-image modal-icon" style="color: #ff6b6b;"></i>
+            <h2 class="modal-title">Invalid Image</h2>
+            <p class="modal-message">We couldn't recognize any valid Philippine coins in this image. Please upload a clear photo of Philippine coins.</p>
+            <button class="modal-btn" onclick="closeInvalidImageModal()">Try Another Image</button>
+        </div>
+    </div>
+
     <!-- Currency Conversion Modal -->
     <div id="conversionModal" class="modal conversion-modal">
         <div class="modal-content">
@@ -572,6 +656,11 @@
         </div>
     </div>
 
+    <!-- Image Preview Modal -->
+    <div id="previewModal" class="preview-modal" onclick="closePreviewModal()">
+        <img id="previewModalImage" src="" alt="Preview" />
+    </div>
+
     <script>
         // Initialize coin counts from template
         const coinCounts = JSON.parse('{{ coin_counts|tojson|safe if coin_counts else "{}" }}');
@@ -580,30 +669,26 @@
             var file = document.getElementById("coin_image").files[0];
             var classifyBtn = document.getElementById("classify-btn");
             var uploadArea = document.getElementById("upload-area");
-            var buttonsContainer = document.getElementById("buttons-container");
-            var previewContainer = document.getElementById("image-preview-container");
+            var previewSection = document.getElementById("preview-section");
+            var imgPreview = document.getElementById("image-preview");
             
             if (file) {
                 classifyBtn.classList.remove("btn-disabled");
                 classifyBtn.disabled = false;
                 var reader = new FileReader();
                 reader.onloadend = function() {
-                    var imgPreview = document.getElementById("image-preview");
                     imgPreview.src = reader.result;
                     imgPreview.style.display = "block";
                     uploadArea.classList.add("upload-area-hidden");
-                    // Move buttons under preview
-                    previewContainer.appendChild(buttonsContainer);
+                    previewSection.style.display = "block";
                 }
                 reader.readAsDataURL(file);
             } else {
                 classifyBtn.classList.add("btn-disabled");
                 classifyBtn.disabled = true;
-                var imgPreview = document.getElementById("image-preview");
                 imgPreview.style.display = "none";
+                previewSection.style.display = "none";
                 uploadArea.classList.remove("upload-area-hidden");
-                // Move buttons back to original position
-                document.getElementById("upload-form").insertBefore(buttonsContainer, document.getElementById("results"));
             }
         }
 
@@ -622,35 +707,6 @@
                     } else {
                         showNoCoinsModal();
                     }
-                });
-            }
-
-            // Add click handler for the upload button in results
-            const uploadNewBtn = document.querySelector('.buttons-group .btn');
-            if (uploadNewBtn) {
-                uploadNewBtn.addEventListener('click', function() {
-                    const fileInput = document.createElement('input');
-                    fileInput.type = 'file';
-                    fileInput.accept = 'image/png, image/jpeg, image/jpg';
-                    fileInput.onchange = function(e) {
-                        if (e.target.files.length > 0) {
-                            document.getElementById('coin_image').files = e.target.files;
-                            // Create and submit a new form
-                            const form = document.createElement('form');
-                            form.method = 'POST';
-                            form.enctype = 'multipart/form-data';
-                            
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.name = 'coin_image';
-                            input.files = e.target.files;
-                            
-                            form.appendChild(input);
-                            document.body.appendChild(form);
-                            form.submit();
-                        }
-                    };
-                    fileInput.click();
                 });
             }
 
@@ -692,6 +748,11 @@
                     }
                 }
             }
+
+            // Update coin display on page load
+            if (Object.keys(coinCounts).length > 0) {
+                updateCoinDisplay();
+            }
         });
 
         function showNoCoinsModal() {
@@ -700,6 +761,14 @@
 
         function closeModal() {
             document.getElementById('noCoinsModal').style.display = 'none';
+        }
+
+        function showInvalidImageModal() {
+            document.getElementById('invalidImageModal').style.display = 'flex';
+        }
+
+        function closeInvalidImageModal() {
+            document.getElementById('invalidImageModal').style.display = 'none';
         }
 
         function showConversionModal(currency, rate, symbol) {
@@ -717,16 +786,80 @@
             document.getElementById('conversionModal').style.display = 'none';
         }
 
+        function showPreviewModal(src) {
+            const modal = document.getElementById('previewModal');
+            const modalImg = document.getElementById('previewModalImage');
+            modal.style.display = 'block';
+            modalImg.src = src;
+        }
+
+        function closePreviewModal() {
+            document.getElementById('previewModal').style.display = 'none';
+        }
+
+        function resetAndUpload() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/png, image/jpeg, image/jpg';
+            fileInput.onchange = function(e) {
+                if (e.target.files.length > 0) {
+                    // Create and submit a new form
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.enctype = 'multipart/form-data';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.name = 'coin_image';
+                    input.files = e.target.files;
+                    
+                    form.appendChild(input);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            };
+            fileInput.click();
+        }
+
         // Close modals when clicking outside
         window.onclick = function(event) {
             const noCoinsModal = document.getElementById('noCoinsModal');
             const conversionModal = document.getElementById('conversionModal');
+            const previewModal = document.getElementById('previewModal');
+            const invalidImageModal = document.getElementById('invalidImageModal');
             if (event.target == noCoinsModal) {
                 closeModal();
             }
             if (event.target == conversionModal) {
                 closeConversionModal();
             }
+            if (event.target == previewModal) {
+                closePreviewModal();
+            }
+            if (event.target == invalidImageModal) {
+                closeInvalidImageModal();
+            }
+        }
+
+        // Function to update coin display
+        function updateCoinDisplay() {
+            if (coinCounts) {
+                document.getElementById('coin-count-1').textContent = `${coinCounts['1'] || 0} coin${(coinCounts['1'] || 0) !== 1 ? 's' : ''}`;
+                document.getElementById('coin-count-5').textContent = `${coinCounts['5'] || 0} coin${(coinCounts['5'] || 0) !== 1 ? 's' : ''}`;
+                document.getElementById('coin-count-10').textContent = `${coinCounts['10'] || 0} coin${(coinCounts['10'] || 0) !== 1 ? 's' : ''}`;
+                document.getElementById('coin-count-20').textContent = `${coinCounts['20'] || 0} coin${(coinCounts['20'] || 0) !== 1 ? 's' : ''}`;
+                
+                // Check if all coin counts are zero
+                const totalCoins = (coinCounts['1'] || 0) + (coinCounts['5'] || 0) + (coinCounts['10'] || 0) + (coinCounts['20'] || 0);
+                if (totalCoins === 0 && '{{ image_data_uri }}') {
+                    showInvalidImageModal();
+                }
+            }
+        }
+
+        // Function to refresh the page and clear all states
+        function refreshPage() {
+            window.location.href = window.location.pathname;
         }
     </script>
 </body>
