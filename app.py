@@ -7,6 +7,7 @@ import json
 import torch
 import torch.nn as nn
 import logging
+import sys
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -30,13 +31,29 @@ def load_model():
             model_load_status = {"status": "initializing", "progress": 10}
             logger.debug("Ultralytics imported successfully")
             
-            # Use model from the repository
-            model_path = os.path.join("models", "PHCoinClassifier", "best.pt")
+            # Determine model path based on environment (local vs Render)
+            if os.environ.get("RENDER"):
+                # For Render deployment
+                model_path = os.path.join(os.getcwd(), "models", "PHCoinClassifier", "best.pt")
+                logger.debug(f"Running on Render, using path: {model_path}")
+            else:
+                # For local development
+                model_path = os.path.join("models", "PHCoinClassifier", "best.pt")
+                logger.debug(f"Running locally, using path: {model_path}")
             
             if not os.path.exists(model_path):
-                model_load_status = {"status": "error", "progress": 0, "message": "Model file not found in repository"}
                 logger.error(f"Error: Model file not found at {model_path}")
-                return False
+                # Try a fallback path for Render
+                fallback_path = os.path.join("/opt/render/project/src", "models", "PHCoinClassifier", "best.pt")
+                logger.debug(f"Trying fallback path: {fallback_path}")
+                
+                if os.path.exists(fallback_path):
+                    model_path = fallback_path
+                    logger.debug(f"Using fallback path: {model_path}")
+                else:
+                    model_load_status = {"status": "error", "progress": 0, "message": "Model file not found in repository"}
+                    logger.error(f"Error: Model file not found at fallback path either")
+                    return False
                 
             # Set torch options to handle safe loading on PyTorch versions
             logger.debug(f"PyTorch version: {torch.__version__}")
@@ -178,12 +195,7 @@ def index():
 def health():
     return "OK", 200
 
-# For deployment
-app.debug = False
-
-# Get port from environment variable for Render
-port = int(os.environ.get("PORT", 10000))
-
-# Ensure the Flask app runs
+# For local development
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port, debug=True)
