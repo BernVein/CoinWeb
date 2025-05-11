@@ -88,6 +88,65 @@ denomination_map = {
     '20 Back': 20
 }
 
+# Define a function for calculating IoU (Intersection over Union)
+def calculate_iou(box1, box2):
+    # Get coordinates
+    x1min, y1min, x1max, y1max = box1
+    x2min, y2min, x2max, y2max = box2
+    
+    # Calculate intersection area
+    x_overlap = max(0, min(x1max, x2max) - max(x1min, x2min))
+    y_overlap = max(0, min(y1max, y2max) - max(y1min, y2min))
+    intersection_area = x_overlap * y_overlap
+    
+    # Calculate union area
+    box1_area = (x1max - x1min) * (y1max - y1min)
+    box2_area = (x2max - x2min) * (y2max - y2min)
+    union_area = box1_area + box2_area - intersection_area
+    
+    # Calculate IoU
+    return intersection_area / union_area if union_area > 0 else 0
+
+# Function to filter overlapping boxes, keeping only the one with highest confidence
+def filter_overlapping_boxes(boxes, confidences, labels, names):
+    if len(boxes) <= 1:
+        return boxes, confidences, labels
+    
+    filtered_indices = []
+    processed_indices = set()
+    
+    # IoU threshold for determining significant overlap
+    overlap_threshold = 0.5
+    
+    for i in range(len(boxes)):
+        if i in processed_indices:
+            continue
+        
+        highest_conf_idx = i
+        highest_conf = confidences[i]
+        
+        for j in range(i + 1, len(boxes)):
+            if j in processed_indices:
+                continue
+            
+            # Calculate overlap
+            iou = calculate_iou(boxes[i].tolist(), boxes[j].tolist())
+            
+            if iou > overlap_threshold:
+                # These boxes overlap significantly
+                processed_indices.add(j)
+                
+                # Keep track of the box with highest confidence
+                if confidences[j] > highest_conf:
+                    highest_conf_idx = j
+                    highest_conf = confidences[j]
+        
+        # Add the box with highest confidence to filtered list
+        processed_indices.add(highest_conf_idx)
+        filtered_indices.append(highest_conf_idx)
+    
+    return [boxes[i] for i in filtered_indices], [confidences[i] for i in filtered_indices], [labels[i] for i in filtered_indices]
+
 # Define a function for classifying the coin and counting them
 def classify_coin_and_count(image):
     # Ensure model is loaded
@@ -101,6 +160,11 @@ def classify_coin_and_count(image):
     confidences = results[0].boxes.conf  # Confidence scores for each detection
     labels = results[0].boxes.cls  # Class indices (coin types)
     
+    # Filter overlapping boxes before counting
+    filtered_boxes, filtered_confidences, filtered_labels = filter_overlapping_boxes(
+        boxes, confidences, labels, results[0].names
+    )
+    
     # Initialize coin counts and total amount
     total_amount = 0
     coin_counts = {5: 0, 10: 0, 1: 0, 20: 0}  # Added 20 PHP coin
@@ -109,12 +173,12 @@ def classify_coin_and_count(image):
     bounding_boxes = []
     
     # Check if there are any detections at all
-    has_detections = len(boxes) > 0
+    has_detections = len(filtered_boxes) > 0
     valid_detections = False
     
-    for i, box in enumerate(boxes):
-        class_name = results[0].names[int(labels[i])]
-        confidence = float(confidences[i])
+    for i, box in enumerate(filtered_boxes):
+        class_name = results[0].names[int(filtered_labels[i])]
+        confidence = float(filtered_confidences[i])
         
         # Only count valid coin types (5 Front, 10 Front, 1 Front, 20 Front)
         if class_name in denomination_map:
