@@ -6,6 +6,11 @@ from io import BytesIO
 import json
 import torch
 import torch.nn as nn
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -18,37 +23,39 @@ def load_model():
     global model, model_load_status
     if model is None:
         try:
+            logger.debug("Starting model loading...")
             # Import here to reduce cold start time
             from ultralytics import YOLO
             
             model_load_status = {"status": "initializing", "progress": 10}
+            logger.debug("Ultralytics imported successfully")
             
             # Use model from the repository
             model_path = os.path.join("models", "PHCoinClassifier", "best.pt")
             
             if not os.path.exists(model_path):
                 model_load_status = {"status": "error", "progress": 0, "message": "Model file not found in repository"}
-                print(f"Error: Model file not found at {model_path}")
+                logger.error(f"Error: Model file not found at {model_path}")
                 return False
                 
             # Set torch options to handle safe loading on PyTorch versions
-            print(f"PyTorch version: {torch.__version__}")
-            original_weights_only = None
+            logger.debug(f"PyTorch version: {torch.__version__}")
             
             # For PyTorch 2.0+, explicitly set device
             device = torch.device('cpu')
+            logger.debug(f"Using device: {device}")
             
             # Load model with explicit arguments
             model_load_status = {"status": "loading", "progress": 50}
-            print(f"Loading model from {model_path}...")
+            logger.debug(f"Loading model from {model_path}...")
             model = YOLO(model_path, task='detect')
             
             model_load_status = {"status": "completed", "progress": 100}
-            print("Model loaded successfully!")
+            logger.debug("Model loaded successfully!")
             return True
         except Exception as e:
             model_load_status = {"status": "error", "progress": 0, "message": str(e)}
-            print(f"Error loading model: {e}")
+            logger.error(f"Error loading model: {e}")
             return False
     return True
 
@@ -124,12 +131,18 @@ def model_status():
 # Home route for uploading image
 @app.route("/", methods=["GET", "POST"])
 def index():
+    # Don't load the model on initial page load
+    if request.method == "GET":
+        logger.debug("Rendering initial page without loading model")
+        return render_template("index.html", first_load=True)
+    
     if request.method == "POST":
         image_file = request.files.get("coin_image")
         
         # Check if an image file was uploaded
         if image_file and image_file.filename.endswith(('png', 'jpg', 'jpeg')):
             try:
+                logger.debug("Processing uploaded image")
                 # Open the uploaded image
                 image = Image.open(image_file.stream)
                 
@@ -137,6 +150,7 @@ def index():
                 image_data_uri = image_to_data_uri(image)
                 
                 # Classify the image, count the coins, and calculate the total
+                # This is where model loading will happen if needed
                 coin_counts, total_amount, bounding_boxes, has_detections, valid_detections = classify_coin_and_count(image)
                 
                 # Remove keys with zero counts
@@ -154,11 +168,10 @@ def index():
                                       valid_detections=valid_detections)
             except Exception as e:
                 error_message = f"Error processing image: {str(e)}"
+                logger.error(error_message)
                 return render_template("index.html", error_message=error_message)
         else:
             return render_template("index.html", error_message="Please upload a valid image file (PNG, JPG, JPEG).")
-    
-    return render_template("index.html", first_load=True)
 
 # Add a simple health check endpoint
 @app.route("/health", methods=["GET"])

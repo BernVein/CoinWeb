@@ -26,6 +26,6 @@ else
     echo "Please ensure the model file is included in your repository"
 fi
 
-# Start application with gunicorn and increased timeout
+# Start application with gunicorn and increased timeout but WITHOUT preload
 echo "Starting Gunicorn server..."
-exec gunicorn app:app --bind 0.0.0.0:$PORT --log-level debug --timeout 180 --workers 1 --preload 
+exec gunicorn app:app --bind 0.0.0.0:$PORT --log-level debug --timeout 180 --workers 1 
